@@ -53,50 +53,41 @@ export default function FedGuardInteractiveFourScenePrototype() {
   const [expandedRow, setExpandedRow] = useState<number | null>(null);
 
   // When navigating to Scene 3, automatically initiate the training animation sequence
+  // LIVE WEBSOCKET CONNECTION FOR SCENE 3
   useEffect(() => {
     if (activeScene === 3) {
-      setBankStatus("Idle");
-      setCounterVal(0.78);
+      setBankStatus("Waiting for banks to connect...");
+      setCounterVal(0.78); // Baseline
       setChartProgress(0);
       setGaugeVal(0.0);
-      setDataFlowActive(false);
 
-      const t1 = setTimeout(() => {
-        setDataFlowActive(true);
-        setBankStatus("Training Round 1...");
-      }, 400);
+      const ws = new WebSocket("ws://localhost:8000/ws/metrics");
 
-      const startTime = Date.now();
-      const duration = 2200;
-      const counterTimer = setInterval(() => {
-        const elapsed = Date.now() - startTime;
-        const progress = Math.min(1, elapsed / duration);
-        const current = 0.78 + (0.92 - 0.78) * (1 - Math.pow(1 - progress, 3));
-        setCounterVal(parseFloat(current.toFixed(2)));
-        setChartProgress(progress);
+      ws.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        
+        if (data.is_training && data.current_round > 0) {
+          setBankStatus(`Training Round ${data.current_round}...`);
+        } else if (!data.is_training && data.current_round === data.total_rounds) {
+          setBankStatus("FL Training Complete!");
+        }
 
-        if (progress >= 1) clearInterval(counterTimer);
-      }, 40);
-
-      const gaugeStartTime = Date.now();
-      const gaugeDuration = 2200;
-      const gaugeTimer = setInterval(() => {
-        const elapsed = Date.now() - gaugeStartTime;
-        const progress = Math.min(1, elapsed / gaugeDuration);
-        const current = 0.82 * (1 - Math.pow(1 - progress, 3));
-        setGaugeVal(parseFloat(current.toFixed(2)));
-
-        if (progress >= 1) clearInterval(gaugeTimer);
-      }, 40);
-
-      return () => {
-        clearTimeout(t1);
-        clearInterval(counterTimer);
-        clearInterval(gaugeTimer);
+        // Extract real metrics from the backend audit log broadcast
+        if (data.rounds && data.rounds.length > 0) {
+          const latest = data.rounds[data.rounds.length - 1];
+          if (latest.global_accuracy) {
+            setCounterVal(latest.global_accuracy);
+            setChartProgress(Math.min(1, latest.round / 10)); 
+          }
+          if (latest.epsilon_spent) {
+            setGaugeVal(latest.epsilon_spent);
+          }
+        }
       };
+
+      return () => ws.close();
     }
   }, [activeScene]);
-
   return (
     <div className="w-full min-h-screen text-slate-800 flex flex-col items-center select-none font-sans pb-12 bg-[#fcf6ee]">
       {/* Top Floating Navbar (Joint Nav Bar) */}
