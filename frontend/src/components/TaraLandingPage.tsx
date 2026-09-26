@@ -227,39 +227,42 @@ export default function TaraLandingPage() {
 
       {/* ── LAYER 3 (Top, z-index: 999): STICKY NAVBAR WITH SCENE DOTS ── */}
       <header className="fixed top-4 left-0 right-0 z-[999] px-4 sm:px-8 pointer-events-none">
-        <div className="max-w-7xl mx-auto clay-card-cream px-6 py-3.5 flex items-center justify-between shadow-xl pointer-events-auto">
+        <div className="max-w-7xl mx-auto clay-card-cream px-6 py-1.5 flex items-center justify-between shadow-xl pointer-events-auto">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-indigo-500 to-indigo-600 flex items-center justify-center shadow-md shadow-indigo-500/30">
-              <ShieldCheck className="w-5 h-5 text-white stroke-[2.5]" />
-            </div>
-            <div>
-              <span className="font-extrabold text-lg tracking-tight text-slate-900">FedGuard</span>
-              <span className="hidden sm:inline-block ml-2.5 text-[10px] uppercase font-bold font-mono px-2.5 py-0.5 rounded-full bg-indigo-100 text-indigo-700">
-                3D Claymorphism AI
-              </span>
-            </div>
+            <img 
+              src="/assets/logo.png" 
+              alt="Logo" 
+              className="w-32 h-auto object-contain drop-shadow-md" 
+            />
           </div>
 
-          {/* Scene indicator dots */}
-          <div className="hidden md:flex items-center gap-3">
-            {["Hero", "Problem", "Architecture", "FL Cycle", "Innovations"].map((label, i) => (
-              <div key={i} className="flex items-center gap-1.5">
-                <div
-                  className={`w-2.5 h-2.5 rounded-full transition-all duration-500 ${currentScene === i + 1
-                    ? "bg-indigo-600 scale-125 shadow-sm shadow-indigo-400"
-                    : "bg-slate-300"
-                    }`}
-                />
-                <span
-                  className={`text-[10px] transition-colors duration-300 ${currentScene === i + 1
-                    ? "text-indigo-700 font-bold"
-                    : "text-slate-400 font-semibold"
-                    }`}
+          {/* Scene indicator topics */}
+          <div className="hidden md:flex items-center gap-5">
+            {["Hero", "Problem", "Architecture", "FL Cycle", "Innovations"].map((label, i) => {
+              const activeColors = [
+                "text-indigo-600 border-indigo-600", // Hero (blue)
+                "text-pink-600 border-pink-600",     // Problem (pink)
+                "text-emerald-600 border-emerald-600", // Architecture (green)
+                "text-amber-600 border-amber-600",   // FL Cycle (orange)
+                "text-rose-600 border-rose-600",     // Innovations (rose/red)
+              ];
+              const isActive = currentScene === i + 1;
+              return (
+                <button
+                  key={i}
+                  onClick={() => {
+                    window.scrollTo({ top: window.innerHeight * i, behavior: "smooth" });
+                  }}
+                  className={`text-sm font-bold transition-all duration-300 border-b-[2.5px] pb-1 ${
+                    isActive 
+                      ? activeColors[i] 
+                      : "text-slate-400 border-transparent hover:text-slate-600 hover:border-slate-300"
+                  }`}
                 >
                   {label}
-                </span>
-              </div>
-            ))}
+                </button>
+              );
+            })}
           </div>
 
           <Link
@@ -280,17 +283,6 @@ export default function TaraLandingPage() {
           style={{ position: "sticky", top: 0, height: "100vh", overflow: "hidden" }}
           className="w-full bg-[#fcf6ee] text-slate-800 font-sans relative"
         >
-          {/* ── GLOBAL FULL-BLEED VIDEO BACKGROUND (heropg.mp4) ── */}
-          <div className="absolute inset-0 w-full h-full pointer-events-none z-0 overflow-hidden">
-            <ScrollVideoPlayer
-              src="/assets/heropg.mp4"
-              speed={0.75}
-              className="w-full h-full object-cover scale-105"
-            />
-            {/* Soft global gradient scrim so text and cards across all scenes are perfectly legible */}
-            <div className="absolute inset-0 bg-gradient-to-r from-[#fcf6ee]/02 via-[#fcf6ee]/02 to-[#fcf6ee]/02" />
-          </div>
-
           {/* Ambient background blur blobs */}
           <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
             <div className="absolute -top-[10%] -left-[5%] w-[50vw] h-[50vw] rounded-full bg-indigo-200/25 blur-[100px]" />
@@ -313,6 +305,17 @@ export default function TaraLandingPage() {
                 transition={{ duration: 0.45, ease: "easeInOut" }}
                 className="absolute inset-0 flex flex-col justify-center px-4 sm:px-8 pt-16 z-10 overflow-hidden"
               >
+                {/* ── BACKGROUND VIDEO FOR SCENE 1 ONLY ── */}
+                <div className="absolute inset-0 w-full h-full pointer-events-none z-0 overflow-hidden">
+                  <ScrollVideoPlayer
+                    src="/assets/heropg.mp4"
+                    speed={0.75}
+                    className="w-full h-full object-cover scale-105"
+                  />
+                  {/* Soft gradient scrim so text remains legible */}
+                  <div className="absolute inset-0 bg-gradient-to-r from-[#fcf6ee]/40 via-[#fcf6ee]/20 to-transparent" />
+                </div>
+
                 {/* FOREGROUND CONTENT (Left-Aligned Text & Controls) */}
                 <div className="max-w-7xl mx-auto w-full relative z-10">
                   <div className="max-w-2xl text-left space-y-6">
@@ -397,10 +400,10 @@ export default function TaraLandingPage() {
                     <span className="text-xs font-mono font-bold text-rose-600 uppercase tracking-widest px-3.5 py-1 rounded-full bg-rose-50 border border-rose-200 shadow-sm">
                       Industry Pain Points
                     </span>
-                    <h2 className="text-3xl sm:text-5xl font-extrabold text-slate-900 tracking-tight">
+                    <h2 className="text-2xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
                       Why Traditional Banking Risk Systems Fail
                     </h2>
-                    <p className="text-slate-600 text-base font-medium max-w-2xl mx-auto">
+                    <p className="text-slate-600 text-sm font-medium max-w-2xl mx-auto">
                       Financial institutions operate in isolated silos — leaving critical blindspots that fraudsters exploit.
                     </p>
                   </div>
@@ -415,13 +418,13 @@ export default function TaraLandingPage() {
                           initial={{ opacity: 0, y: 30, scale: 0.92 }}
                           animate={{ opacity: 1, y: 0, scale: 1 }}
                           transition={{ delay: i * 0.08, type: "spring", stiffness: 220, damping: 22 }}
-                          className={`${card.cardClass} p-6 sm:p-8 space-y-4 shadow-xl overflow-hidden`}
+                          className={`${card.cardClass} p-4 sm:p-5 space-y-3 shadow-xl overflow-hidden`}
                         >
-                          <div className={`w-12 h-12 rounded-2xl ${card.iconBg} flex items-center justify-center font-bold shadow-inner`}>
-                            <CardIcon className={`w-6 h-6 ${card.iconColor}`} />
+                          <div className={`w-10 h-10 rounded-2xl ${card.iconBg} flex items-center justify-center font-bold shadow-inner`}>
+                            <CardIcon className={`w-5 h-5 ${card.iconColor}`} />
                           </div>
-                          <h3 className="text-lg font-extrabold text-slate-950">{card.title}</h3>
-                          <p className="text-xs sm:text-sm text-slate-800 leading-relaxed font-medium">
+                          <h3 className="text-base font-extrabold text-slate-950">{card.title}</h3>
+                          <p className="text-[10px] sm:text-xs text-slate-800 leading-relaxed font-medium">
                             {card.desc}
                           </p>
                         </motion.div>
@@ -471,8 +474,12 @@ export default function TaraLandingPage() {
                       </span>
                     </div>
 
-                    <div className="relative overflow-hidden rounded-2xl border border-slate-200/80 shadow-xl bg-slate-900 max-w-4xl mx-auto">
-                      <ScrollVideoPlayer src="/assets/archvideo.mp4" speed={0.75} />
+                    <div className="relative overflow-hidden rounded-2xl border border-slate-200/80 shadow-xl bg-slate-50 max-w-3xl mx-auto flex items-center justify-center">
+                      <ScrollVideoPlayer 
+                        src="/assets/archvideo.mp4" 
+                        speed={0.75} 
+                        className="w-full max-h-[40vh] md:max-h-[50vh] object-contain rounded-2xl shadow-inner"
+                      />
                     </div>
 
                     <div className="grid grid-cols-3 gap-3 text-center text-xs font-bold pt-1">
