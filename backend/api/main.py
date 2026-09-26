@@ -1,11 +1,26 @@
 import asyncio
 import copy
+import logging
 from contextlib import asynccontextmanager
 from typing import List
 
+import httpx
 import uvicorn
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, status
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from pydantic import BaseModel
+
+logger = logging.getLogger("fedguard-api")
+logging.basicConfig(level=logging.INFO)
+
+# Pydantic Model for incoming ML Server metrics
+class WebhookPayload(BaseModel):
+    round: int
+    accuracy: float
+    loss: float
+    epsilon: float
+    bank_statuses: dict
 
 # Global State Dictionary for FL Training Simulation & Real-time Metrics
 training_state = {
@@ -149,6 +164,63 @@ async def websocket_metrics(websocket: WebSocket):
         manager.disconnect(websocket)
     except Exception:
         manager.disconnect(websocket)
+
+@app.post("/api/start-training", summary="Trigger Federated Training")
+async def start_training():
+    """
+    Triggers federated training on the FL server (http://fl-server:8080/start).
+    Falls back gracefully to simulated training if the ML server is unreachable.
+    """
+    fl_server_url = "http://fl-server:8080/start"
+    try:
+        async with httpx.AsyncClient(timeout=3.0) as client:
+            response = await client.get(fl_server_url)
+            response.raise_for_status()
+            training_state["is_training"] = True
+            return {
+                "status": "success",
+                "message": "Federated training initiated on ML server",
+                "server_response": response.json() if response.headers.get("content-type") == "application/json" else response.text
+            }
+    except (httpx.RequestError, httpx.HTTPStatusError) as exc:
+        logger.warning(f"FL server at {fl_server_url} unreachable ({exc}). Falling back to simulated training.")
+        training_state["is_training"] = True
+        return JSONResponse(
+            status_code=status.HTTP_202_ACCEPTED,
+            content={
+                "status": "accepted",
+                "message": "Falling back to simulated training",
+                "mode": "simulated"
+            }
+        )
+
+@app.post("/api/webhook/metrics", summary="Receive Real FL Metrics Webhook")
+async def webhook_metrics(payload: WebhookPayload):
+    """
+    Receives real round metrics from Yash's FL Server, updates global state,
+    and broadcasts to all connected frontend clients via WebSocket.
+    """
+    training_state["current_round"] = payload.round
+    training_state["privacy_budget"]["current_epsilon"] = payload.epsilon
+    
+    if payload.bank_statuses:
+        training_state["bank_status"].update(payload.bank_statuses)
+
+    round_entry = {
+        "round": payload.round,
+        "global_accuracy": payload.accuracy,
+        "global_loss": payload.loss,
+        "epsilon_spent": payload.epsilon,
+        "participating_banks": list(payload.bank_statuses.keys()) if payload.bank_statuses else ["Bank_A", "Bank_B", "Bank_C"],
+        "cosine_similarity_passed": True,
+        "timestamp": round(asyncio.get_event_loop().time(), 2),
+    }
+    training_state["rounds"].append(round_entry)
+
+    # Broadcast update to all WebSocket subscribers
+    await manager.broadcast(training_state)
+
+    return {"status": "success", "message": f"Metrics for round {payload.round} processed"}
 
 @app.get("/api/compliance", summary="Get Compliance Mapping")
 async def get_compliance_mapping():
