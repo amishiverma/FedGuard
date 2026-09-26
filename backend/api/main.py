@@ -30,7 +30,8 @@ def _fetch_audit_rounds(since_id: int = 0) -> List[Dict[str, Any]]:
     if not os.path.exists(AUDIT_DB):
         return []
     try:
-        con = sqlite3.connect(AUDIT_DB)
+        con = sqlite3.connect(AUDIT_DB, timeout=10.0)
+        con.execute("PRAGMA journal_mode=WAL;")
         con.row_factory = sqlite3.Row
         rows = con.execute(
             "SELECT * FROM audit_rounds WHERE id > ? ORDER BY id ASC",
@@ -91,6 +92,8 @@ class ConnectionManager:
 
 manager = ConnectionManager()
 
+SIMULATION_MODE = False
+
 async def simulate_training():
     """
     Background worker that simulates federated learning rounds.
@@ -99,7 +102,7 @@ async def simulate_training():
     await asyncio.sleep(1.0)
     while True:
         try:
-            if training_state["is_training"]:
+            if SIMULATION_MODE and training_state["is_training"]:
                 current = training_state["current_round"]
                 if current < training_state["total_rounds"]:
                     current += 1
@@ -146,12 +149,49 @@ async def simulate_training():
         except Exception:
             await asyncio.sleep(2.0)
 
+async def poll_audit_db_loop():
+    last_audit_id = 0
+    while True:
+        await asyncio.sleep(1.0)
+        try:
+            new_rows = _fetch_audit_rounds(since_id=last_audit_id)
+            if new_rows:
+                for row in new_rows:
+                    last_audit_id = row["id"]
+                    rnd = row["round_number"]
+                    training_state["current_round"] = rnd
+
+                    eps = row.get("max_epsilon_spent") or 0.0
+                    training_state["privacy_budget"]["current_epsilon"] = round(eps, 4)
+
+                    acc = row.get("global_accuracy")
+                    round_entry = {
+                        "round":                  rnd,
+                        "global_accuracy":        acc,
+                        "global_loss":            None,
+                        "epsilon_spent":          eps,
+                        "participating_banks":    ["Bank_A", "Bank_B", "Bank_C"],
+                        "cosine_similarity_passed": row.get("poisoned_nodes", 0) == 0,
+                        "poisoned_nodes_dropped": row.get("poisoned_nodes", 0),
+                        "timestamp":              row.get("timestamp"),
+                    }
+                    training_state["rounds"].append(round_entry)
+
+                    if rnd >= training_state["total_rounds"]:
+                        training_state["is_training"] = False
+
+                await manager.broadcast(training_state)
+        except Exception as e:
+            logger.error(f"Polling error: {e}")
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Start the simulation background loop
     task = asyncio.create_task(simulate_training())
+    poll_task = asyncio.create_task(poll_audit_db_loop())
     yield
     task.cancel()
+    poll_task.cancel()
 
 app = FastAPI(
     title="FedGuard API",
@@ -212,48 +252,12 @@ async def get_shap_values(bank_id: str):
 async def websocket_metrics(websocket: WebSocket):
     """
     WebSocket endpoint streaming live FL metrics.
-
-    Behaviour:
-    - Sends initial snapshot immediately on connect.
-    - Every second, checks backend/audit_log.db for new rows written by the
-      real FL server. If found, merges them into training_state and broadcasts.
-    - Falls back to the simulation loop broadcast when no real data is present.
     """
     await manager.connect(websocket)
-    last_audit_id: int = 0
     try:
         await websocket.send_json(training_state)
         while True:
-            await asyncio.sleep(1.0)
-
-            # --- Poll real audit DB ---
-            new_rows = _fetch_audit_rounds(since_id=last_audit_id)
-            for row in new_rows:
-                last_audit_id = row["id"]
-                rnd = row["round_number"]
-                training_state["current_round"] = rnd
-
-                eps = row.get("max_epsilon_spent") or 0.0
-                training_state["privacy_budget"]["current_epsilon"] = round(eps, 4)
-
-                acc = row.get("global_accuracy")
-                round_entry = {
-                    "round":                  rnd,
-                    "global_accuracy":        acc,
-                    "global_loss":            None,
-                    "epsilon_spent":          eps,
-                    "participating_banks":    ["Bank_A", "Bank_B", "Bank_C"],
-                    "cosine_similarity_passed": row.get("poisoned_nodes", 0) == 0,
-                    "poisoned_nodes_dropped": row.get("poisoned_nodes", 0),
-                    "timestamp":              row.get("timestamp"),
-                }
-                training_state["rounds"].append(round_entry)
-
-                if rnd >= training_state["total_rounds"]:
-                    training_state["is_training"] = False
-
-                await websocket.send_json(training_state)
-
+            await websocket.receive_text()
     except WebSocketDisconnect:
         manager.disconnect(websocket)
     except Exception:
@@ -262,31 +266,13 @@ async def websocket_metrics(websocket: WebSocket):
 @app.post("/api/start-training", summary="Trigger Federated Training")
 async def start_training():
     """
-    Triggers federated training on the FL server (http://fl-server:8080/start).
-    Falls back gracefully to simulated training if the ML server is unreachable.
+    Training must be manually started via terminals to prevent gRPC/HTTP collisions.
     """
-    fl_server_url = "http://fl-server:8080/start"
-    try:
-        async with httpx.AsyncClient(timeout=3.0) as client:
-            response = await client.get(fl_server_url)
-            response.raise_for_status()
-            training_state["is_training"] = True
-            return {
-                "status": "success",
-                "message": "Federated training initiated on ML server",
-                "server_response": response.json() if response.headers.get("content-type") == "application/json" else response.text
-            }
-    except (httpx.RequestError, httpx.HTTPStatusError) as exc:
-        logger.warning(f"FL server at {fl_server_url} unreachable ({exc}). Falling back to simulated training.")
-        training_state["is_training"] = True
-        return JSONResponse(
-            status_code=status.HTTP_202_ACCEPTED,
-            content={
-                "status": "accepted",
-                "message": "Falling back to simulated training",
-                "mode": "simulated"
-            }
-        )
+    training_state["is_training"] = True
+    return {
+        "status": "listening",
+        "message": "Start clients in terminals to begin training"
+    }
 
 @app.post("/api/webhook/metrics", summary="Receive Real FL Metrics Webhook")
 async def webhook_metrics(payload: WebhookPayload):
