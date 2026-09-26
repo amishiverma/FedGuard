@@ -42,7 +42,6 @@ yarn-error.log*
 # =========================
 data/raw
 *.csv
-*.json
 !config.json
 
 # =========================
