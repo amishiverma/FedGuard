@@ -113,7 +113,8 @@ except ImportError:
 
 def _init_audit_db(db_path: str) -> None:
     """Create the audit_rounds table if it doesn't exist."""
-    con = sqlite3.connect(db_path)
+    con = sqlite3.connect(db_path, timeout=10.0)
+    con.execute("PRAGMA journal_mode=WAL;")
     con.execute("""
         CREATE TABLE IF NOT EXISTS audit_rounds (
             id                  INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -139,7 +140,8 @@ def _write_audit_round(
 ) -> None:
     """Append one round record to the audit log (non-blocking, best-effort)."""
     try:
-        con = sqlite3.connect(db_path)
+        con = sqlite3.connect(db_path, timeout=10.0)
+        con.execute("PRAGMA journal_mode=WAL;")
         con.execute(
             """
             INSERT INTO audit_rounds
