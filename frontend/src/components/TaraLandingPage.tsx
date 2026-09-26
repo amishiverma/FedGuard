@@ -54,11 +54,9 @@ export default function TaraLandingPage() {
       setCurrentScene(scene);
     }
 
-    // Auto tab-switching in Scene 4 (0.60 -> 0.80)
+    // Pulse and Epsilon animation in Scene 4 (0.60 -> 0.80)
     if (val >= 0.60 && val < 0.80) {
       const p = (val - 0.60) / 0.20;
-      const idx = Math.min(3, Math.floor(p * 4));
-      setActiveTab(idx);
       if (p > 0.80) {
         setBtnPulse(true);
         setEpsilon(parseFloat((0.85 + p * 0.15).toFixed(2)));
@@ -459,26 +457,26 @@ export default function TaraLandingPage() {
 
                   <div className="clay-card-cream p-4 sm:p-6 shadow-2xl space-y-3 overflow-hidden">
                     <div className="flex items-center justify-between border-b border-slate-200/80 pb-3">
-                      <div className="flex items-center gap-2.5">
+                      <div className="flex items-center gap-2">
                         <motion.span
                           animate={{ scale: [1, 1.8, 1], opacity: [1, 0.3, 1] }}
                           transition={{ repeat: Infinity, duration: 0.85 }}
-                          className="w-3.5 h-3.5 rounded-full bg-emerald-500 inline-block shadow-sm shadow-emerald-400"
+                          className="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block shadow-sm shadow-emerald-400"
                         />
-                        <span className="text-xs font-bold text-indigo-700 uppercase tracking-wider font-mono">
+                        <span className="text-[9px] font-bold text-indigo-700 uppercase tracking-wider font-mono">
                           Live 3D Architecture Flow Animation (Continuous Loop)
                         </span>
                       </div>
-                      <span className="text-[10px] font-mono font-extrabold px-3 py-1 rounded-full bg-indigo-100 text-indigo-800">
+                      <span className="text-[8px] font-mono font-extrabold px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-800">
                         archvideo.mp4 · 0.75× speed
                       </span>
                     </div>
 
-                    <div className="relative overflow-hidden rounded-2xl border border-slate-200/80 shadow-xl bg-slate-50 max-w-3xl mx-auto flex items-center justify-center">
+                    <div className="relative overflow-hidden rounded-2xl shadow-xl bg-transparent w-full flex items-center justify-center">
                       <ScrollVideoPlayer 
                         src="/assets/archvideo.mp4" 
                         speed={0.75} 
-                        className="w-full max-h-[40vh] md:max-h-[50vh] object-contain rounded-2xl shadow-inner"
+                        className="w-full h-auto max-h-[60vh] md:max-h-[70vh] object-cover sm:object-contain rounded-2xl"
                       />
                     </div>
 

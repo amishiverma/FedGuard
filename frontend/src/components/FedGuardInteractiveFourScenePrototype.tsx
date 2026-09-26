@@ -116,10 +116,10 @@ export default function FedGuardInteractiveFourScenePrototype() {
           {/* Scene Switcher Pills -> Colored Underlines */}
           <nav className="hidden md:flex items-center gap-5">
             {[
-              { id: 1, label: "1. Landing Hero", color: "text-indigo-600 border-indigo-600" },
-              { id: 2, label: "2. Architecture", color: "text-emerald-600 border-emerald-600" },
-              { id: 3, label: "3. Live Dashboard", color: "text-amber-600 border-amber-600" },
-              { id: 4, label: "4. Compliance & Audit", color: "text-rose-600 border-rose-600" },
+              { id: 1, label: "Platform Overview", color: "text-indigo-600 border-indigo-600" },
+              { id: 2, label: "Core Architecture", color: "text-emerald-600 border-emerald-600" },
+              { id: 3, label: "Live Dashboard", color: "text-amber-600 border-amber-600" },
+              { id: 4, label: "Compliance & Audit", color: "text-rose-600 border-rose-600" },
             ].map((scene) => (
               <button
                 key={scene.id}
@@ -150,89 +150,88 @@ export default function FedGuardInteractiveFourScenePrototype() {
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.98 }}
               transition={{ duration: 0.4 }}
-              className="space-y-10"
+              className="relative w-full min-h-[75vh] rounded-[2.5rem] overflow-hidden shadow-2xl flex items-center bg-cover bg-left"
+              style={{ backgroundImage: "url('/assets/dashboard_bg.jpg')" }}
             >
-              {/* Hero Banner Card */}
-              <div className="clay-card-cream p-6 sm:p-8 text-center space-y-4 relative overflow-hidden shadow-2xl">
-                <h1 className="text-3xl sm:text-5xl font-extrabold text-slate-900 tracking-tight leading-tight">
-                  Financial Risk Intelligence. <br />
-                  <span className="bg-gradient-to-r from-indigo-600 via-teal-600 to-amber-600 bg-clip-text text-transparent">
-                    Zero Raw Data Shared.
-                  </span>
-                </h1>
-
-                <p className="text-slate-600 text-sm sm:text-base max-w-2xl mx-auto font-medium leading-relaxed">
-                  Train collaborative fraud and credit risk models across financial institutions without raw customer records ever leaving local vaults.
-                </p>
-
-                <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
-                  <button
-                    onClick={() => setActiveScene(2)}
-                    className="clay-btn-lavender px-6 py-3 font-extrabold text-xs flex items-center gap-2 text-white"
-                  >
-                    <span>Get Started → Zoom Architecture</span>
-                    <ArrowRight className="w-4 h-4 stroke-[2.5]" />
-                  </button>
-                  <button
-                    onClick={() => setActiveScene(3)}
-                    className="clay-btn-mint px-5 py-3 font-extrabold text-xs flex items-center gap-2 text-white"
-                  >
-                    <span>Jump to Live Dashboard</span>
-                  </button>
-                </div>
-              </div>
-
-              {/* 3D Flow Preview Card (image_2.png styled) */}
-              <div className="clay-card-cream p-5 sm:p-6 space-y-4 shadow-xl">
-                <div className="flex items-center justify-between border-b border-slate-200 pb-3">
-                  <div className="flex items-center gap-2">
-                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping" />
-                    <span className="text-[10px] font-extrabold text-indigo-700 uppercase font-mono">
-                      image_2.png Interactive Architecture Reference
+              {/* Gradient overlay to ensure text readability on the right side */}
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-[#fff9f2]/90 md:via-white/50 md:to-[#fff9f2]/95"></div>
+              
+              <div className="relative w-full flex flex-col md:flex-row items-center justify-end px-6 sm:px-12 pt-24 pb-12 z-10 h-full">
+                <div className="w-full md:w-[42%] flex flex-col items-start space-y-5">
+                  
+                  <h1 className="text-4xl md:text-5xl lg:text-[3.5rem] font-extrabold text-[#1e293b] tracking-tight leading-[1.1]">
+                    Financial Risk <br /> Intelligence. <br />
+                    <span className="leading-tight mt-2 block">
+                      <span className="text-[#6b46ff]">Zero </span>
+                      <span className="text-[#0084ff]">Raw </span>
+                      <span className="text-[#00b875]">Data </span>
+                      <br />
+                      <span className="text-[#ff9100]">Shared.</span>
                     </span>
-                  </div>
-                  <button
-                    onClick={() => setActiveScene(2)}
-                    className="text-[10px] font-extrabold text-indigo-600 hover:underline flex items-center gap-1"
-                  >
-                    View Interactive Zoom <ChevronRight className="w-3.5 h-3.5" />
-                  </button>
-                </div>
+                  </h1>
 
-                {/* 3 Bank Cards Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="clay-card-lavender p-4 space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="font-extrabold text-xs text-indigo-950">Bank A (HDFC)</span>
-                      <span className="text-[9px] font-mono px-2 py-0.5 rounded-full bg-white/80 text-indigo-900 font-bold">Node A</span>
-                    </div>
-                    <div className="text-[10px] text-indigo-900 font-medium">Local Kaggle Dataset • 94,935 Transactions</div>
-                    <div className="clay-card-cream p-1.5 text-[9px] font-mono font-bold text-indigo-900 flex items-center gap-1">
-                      <Lock className="w-2.5 h-2.5 text-indigo-600" /> Protected Local Updates Only
-                    </div>
-                  </div>
+                  <p className="text-slate-600 text-sm font-medium leading-relaxed max-w-md">
+                    Train collaborative fraud and credit risk models across financial institutions without raw customer records ever leaving local vaults.
+                  </p>
 
-                  <div className="clay-card-mint p-4 space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="font-extrabold text-xs text-emerald-950">Bank B (ICICI)</span>
-                      <span className="text-[9px] font-mono px-2 py-0.5 rounded-full bg-white/80 text-emerald-900 font-bold">Node B</span>
-                    </div>
-                    <div className="text-[10px] text-emerald-900 font-medium">Local Kaggle Dataset • 94,936 Transactions</div>
-                    <div className="clay-card-cream p-1.5 text-[9px] font-mono font-bold text-emerald-900 flex items-center gap-1">
-                      <Lock className="w-2.5 h-2.5 text-emerald-600" /> Protected Local Updates Only
-                    </div>
+                  <div className="flex flex-wrap items-center gap-4 pt-2">
+                    <button
+                      onClick={() => setActiveScene(2)}
+                      className="bg-[#5b54f9] hover:bg-indigo-600 transition-colors px-6 py-3.5 rounded-full font-bold text-xs flex items-center gap-2 text-white shadow-lg shadow-indigo-300/50"
+                    >
+                      <span>Get Started → Zoom Architecture</span>
+                    </button>
+                    <button
+                      onClick={() => setActiveScene(3)}
+                      className="bg-white hover:bg-slate-50 transition-colors px-6 py-3.5 rounded-full font-bold text-xs flex items-center gap-2 text-slate-800 shadow-xl shadow-slate-200/50 border border-slate-100"
+                    >
+                      <div className="w-5 h-5 rounded-full bg-indigo-100 flex items-center justify-center">
+                        <div className="w-0 h-0 border-t-[4px] border-t-transparent border-l-[6px] border-l-indigo-600 border-b-[4px] border-b-transparent ml-0.5" />
+                      </div>
+                      <span>Jump to Live Dashboard</span>
+                    </button>
                   </div>
 
-                  <div className="clay-card-yellow p-4 space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="font-extrabold text-xs text-amber-950">FinTech C (PhonePe)</span>
-                      <span className="text-[9px] font-mono px-2 py-0.5 rounded-full bg-white/80 text-amber-950 font-bold">Node C</span>
+                  {/* 3 Bank Cards Grid (Restored) */}
+                  <div className="w-full max-w-xl bg-white/40 backdrop-blur-md rounded-2xl p-4 shadow-xl border border-white/60 mt-8">
+                    <div className="flex items-center justify-between border-b border-slate-200/50 pb-2 mb-3">
+                      <div className="flex items-center gap-2">
+                        <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping" />
+                        <span className="text-[9px] font-extrabold text-indigo-800 uppercase tracking-widest font-mono">
+                          Live Architecture Nodes
+                        </span>
+                      </div>
+                      <button
+                        onClick={() => setActiveScene(2)}
+                        className="text-[9px] font-extrabold text-indigo-700 hover:underline flex items-center gap-1"
+                      >
+                        View Interactive Zoom <ChevronRight className="w-3 h-3" />
+                      </button>
                     </div>
-                    <div className="text-[10px] text-amber-900 font-medium">Local Kaggle Dataset • 94,936 Transactions</div>
-                    <div className="clay-card-cream p-1.5 text-[9px] font-mono font-bold text-amber-900 flex items-center gap-1">
-                      <Lock className="w-2.5 h-2.5 text-amber-700" /> Protected Local Updates Only
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                      <div className="bg-[#6b46ff]/10 backdrop-blur-sm rounded-xl p-3 space-y-2 border border-[#6b46ff]/20">
+                        <div className="flex items-center justify-between">
+                          <span className="font-extrabold text-xs text-indigo-950">Bank A (HDFC)</span>
+                        </div>
+                        <div className="text-[10px] text-indigo-900 font-medium leading-snug">Local Kaggle Dataset<br/>94,935 Transactions</div>
+                      </div>
+
+                      <div className="bg-[#00b875]/10 backdrop-blur-sm rounded-xl p-3 space-y-2 border border-[#00b875]/20">
+                        <div className="flex items-center justify-between">
+                          <span className="font-extrabold text-xs text-emerald-950">Bank B (ICICI)</span>
+                        </div>
+                        <div className="text-[10px] text-emerald-900 font-medium leading-snug">Local Kaggle Dataset<br/>94,936 Transactions</div>
+                      </div>
+
+                      <div className="bg-[#ff9100]/10 backdrop-blur-sm rounded-xl p-3 space-y-2 border border-[#ff9100]/20">
+                        <div className="flex items-center justify-between">
+                          <span className="font-extrabold text-xs text-amber-950">FinTech C (PhonePe)</span>
+                        </div>
+                        <div className="text-[10px] text-amber-900 font-medium leading-snug">Local Kaggle Dataset<br/>94,936 Transactions</div>
+                      </div>
                     </div>
                   </div>
+
                 </div>
               </div>
             </motion.div>
