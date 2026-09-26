@@ -224,4 +224,23 @@ def main(
 
 
 if __name__ == "__main__":
-    main()
+    import argparse
+
+    _parser = argparse.ArgumentParser(
+        description="FedGuard FL Aggregation Server",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    )
+    _parser.add_argument(
+        "--server_address",
+        type=str,
+        default="0.0.0.0:8080",
+        help="gRPC server address (host:port).",
+    )
+    _parser.add_argument(
+        "--num_rounds",
+        type=int,
+        default=3,
+        help="Number of federated learning rounds.",
+    )
+    _args = _parser.parse_args()
+    main(server_address=_args.server_address, num_rounds=_args.num_rounds)
