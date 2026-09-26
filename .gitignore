@@ -10,13 +10,20 @@ venv/
 env/
 .venv/
 *.log
-*.sqlite
 
 # PyTorch / ML Models
 *.pt
 *.pth
 *.h5
 *.pkl
+
+# =========================
+# Databases & Audit Logs (NEW)
+# =========================
+*.sqlite
+*.sqlite3
+*.db
+audit_log.db
 
 # =========================
 # Node / Frontend
@@ -36,11 +43,10 @@ yarn-error.log*
 data/
 *.csv
 *.json
-# (Allowing dummy config json if needed, but blocking data dumps)
 !config.json
 
 # =========================
-# OS Files
+# Docker & OS Files
 # =========================
 .DS_Store
 Thumbs.db
