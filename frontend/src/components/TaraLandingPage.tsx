@@ -264,7 +264,7 @@ export default function TaraLandingPage() {
 
           <Link
             href="/dashboard"
-            className="clay-btn-lavender px-5 py-2.5 font-bold text-xs tracking-wide flex items-center gap-2"
+            className="clay-btn-peach px-5 py-2.5 font-bold text-xs tracking-wide flex items-center gap-2"
           >
             <span>Launch Console</span>
             <ArrowRight className="w-4 h-4 stroke-[2.5]" />
@@ -288,7 +288,7 @@ export default function TaraLandingPage() {
               className="w-full h-full object-cover scale-105"
             />
             {/* Soft global gradient scrim so text and cards across all scenes are perfectly legible */}
-            <div className="absolute inset-0 bg-gradient-to-r from-[#fcf6ee]/10 via-[#fcf6ee]/10 to-[#fcf6ee]/10 backdrop-blur-[1px]" />
+            <div className="absolute inset-0 bg-gradient-to-r from-[#fcf6ee]/02 via-[#fcf6ee]/02 to-[#fcf6ee]/02" />
           </div>
 
           {/* Ambient background blur blobs */}
@@ -318,7 +318,7 @@ export default function TaraLandingPage() {
                   <div className="max-w-2xl text-left space-y-6">
 
                     {/* Top Tag */}
-                    <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-indigo-100/90 text-indigo-700 font-mono font-extrabold text-[11px] tracking-widest uppercase border border-indigo-200 shadow-sm backdrop-blur-md">
+                    <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-indigo-100/90 text-indigo-700 font-mono font-extrabold text-[10px] tracking-widest uppercase border border-indigo-200 shadow-sm backdrop-blur-md">
                       <span>PRIVACY</span>
                       <span>/</span>
                       <span>COLLABORATION</span>
@@ -327,7 +327,7 @@ export default function TaraLandingPage() {
                     </div>
 
                     {/* Main H1 Title */}
-                    <h1 className="text-4xl sm:text-6xl lg:text-7xl font-extrabold text-slate-900 tracking-tight leading-[1.08]">
+                    <h1 className="text-2xl sm:text-4xl lg:text-5xl font-extrabold text-slate-900 tracking-tight leading-[1.08]">
                       Financial Risk Intelligence. <br />
                       <span className="bg-gradient-to-r from-indigo-600 via-teal-600 to-amber-600 bg-clip-text text-transparent">
                         Zero Raw Data Shared.
@@ -335,7 +335,7 @@ export default function TaraLandingPage() {
                     </h1>
 
                     {/* Subtitle Paragraph */}
-                    <p className="text-slate-700 text-base sm:text-lg font-medium leading-relaxed max-w-xl">
+                    <p className="text-slate-700 text-sm sm:text-base font-medium leading-relaxed max-w-xl">
                       A privacy-preserving federated AI platform where banks collaboratively train fraud &amp; credit risk models — protected by Differential Privacy, SecAgg, and fully auditable by design.
                     </p>
 
@@ -343,7 +343,7 @@ export default function TaraLandingPage() {
                     <div className="flex flex-wrap items-center gap-3 pt-1">
                       <Link
                         href="/dashboard"
-                        className="clay-btn-lavender px-8 py-4 font-extrabold text-sm flex items-center gap-2 shadow-xl hover:scale-105 transition-transform"
+                        className="clay-btn-peach px-7 py-3.5 font-extrabold text-xs flex items-center gap-2 shadow-xl hover:scale-105 transition-transform"
                       >
                         <span>Explore Interactive Prototype</span>
                         <ArrowRight className="w-4 h-4 stroke-[2.5]" />
@@ -353,25 +353,25 @@ export default function TaraLandingPage() {
                         onClick={() => {
                           window.scrollTo({ top: window.innerHeight * 2, behavior: "smooth" });
                         }}
-                        className="clay-btn-cream px-7 py-4 font-extrabold text-sm text-slate-800 flex items-center gap-2 shadow-md hover:bg-slate-100 transition-colors backdrop-blur-md"
+                        className="clay-btn-cream px-6 py-3.5 font-extrabold text-xs text-slate-800 flex items-center gap-2 shadow-md hover:bg-slate-100 transition-colors backdrop-blur-md"
                       >
-                        <div className="w-5 h-5 rounded-full bg-indigo-600 text-white flex items-center justify-center">
-                          <span className="text-[10px] pl-0.5">▶</span>
+                        <div className="w-4 h-4 rounded-full bg-indigo-600 text-white flex items-center justify-center">
+                          <span className="text-[8px] pl-0.5">▶</span>
                         </div>
                         <span>View 3D Data Flow</span>
                       </button>
                     </div>
 
                     {/* 3 Pill Badges */}
-                    <div className="flex flex-wrap items-center gap-2.5 pt-2 text-xs font-semibold">
-                      <span className="px-4 py-2 rounded-full bg-white/90 text-emerald-800 border border-emerald-300 font-bold flex items-center gap-1.5 text-xs shadow-sm backdrop-blur-md">
-                        <CheckCircle2 className="w-4 h-4 text-emerald-600" /> DPDP Act &amp; GDPR Compliant
+                    <div className="flex flex-wrap items-center gap-2.5 pt-2 text-[10px] font-semibold">
+                      <span className="px-3.5 py-1.5 rounded-full bg-white/90 text-emerald-800 border border-emerald-300 font-bold flex items-center gap-1 text-[10px] shadow-sm backdrop-blur-md">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> DPDP Act &amp; GDPR Compliant
                       </span>
-                      <span className="px-4 py-2 rounded-full bg-white/90 text-indigo-800 border border-indigo-300 font-bold flex items-center gap-1.5 text-xs shadow-sm backdrop-blur-md">
-                        <Lock className="w-4 h-4 text-indigo-600" /> Opacus Differential Privacy (ε,δ)
+                      <span className="px-3.5 py-1.5 rounded-full bg-white/90 text-indigo-800 border border-indigo-300 font-bold flex items-center gap-1 text-[10px] shadow-sm backdrop-blur-md">
+                        <Lock className="w-3.5 h-3.5 text-indigo-600" /> Opacus Differential Privacy (ε,δ)
                       </span>
-                      <span className="px-4 py-2 rounded-full bg-white/90 text-amber-900 border border-amber-300 font-bold flex items-center gap-1.5 text-xs shadow-sm backdrop-blur-md">
-                        <Server className="w-4 h-4 text-amber-700" /> Flower FL 1.x Framework
+                      <span className="px-3.5 py-1.5 rounded-full bg-white/90 text-amber-900 border border-amber-300 font-bold flex items-center gap-1 text-[10px] shadow-sm backdrop-blur-md">
+                        <Server className="w-3.5 h-3.5 text-amber-700" /> Flower FL 1.x Framework
                       </span>
                     </div>
 
