@@ -1,7 +1,9 @@
 import asyncio
 import logging
+import os
+import sqlite3
 from contextlib import asynccontextmanager
-from typing import List
+from typing import Any, Dict, List, Optional
 
 import httpx
 import uvicorn
@@ -11,6 +13,33 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from audit_log import get_all_logs
 from shap_service import get_mock_shap_values
+
+# ---------------------------------------------------------------------------
+# Audit DB path (written by backend/fl_server/server.py)
+# ---------------------------------------------------------------------------
+_API_DIR  = os.path.dirname(os.path.abspath(__file__))          # backend/api/
+_BACK_DIR = os.path.abspath(os.path.join(_API_DIR, ".."))       # backend/
+AUDIT_DB  = os.path.join(_BACK_DIR, "audit_log.db")
+
+
+def _fetch_audit_rounds(since_id: int = 0) -> List[Dict[str, Any]]:
+    """
+    Read new rows from audit_rounds table written by the FL server.
+    Returns [] if DB doesn't exist yet (server not started).
+    """
+    if not os.path.exists(AUDIT_DB):
+        return []
+    try:
+        con = sqlite3.connect(AUDIT_DB)
+        con.row_factory = sqlite3.Row
+        rows = con.execute(
+            "SELECT * FROM audit_rounds WHERE id > ? ORDER BY id ASC",
+            (since_id,)
+        ).fetchall()
+        con.close()
+        return [dict(r) for r in rows]
+    except Exception:
+        return []
 
 logger = logging.getLogger("fedguard-api")
 logging.basicConfig(level=logging.INFO)
@@ -182,16 +211,49 @@ async def get_shap_values(bank_id: str):
 @app.websocket("/ws/metrics")
 async def websocket_metrics(websocket: WebSocket):
     """
-    WebSocket endpoint streaming live federated learning metrics & training state.
-    Handles client disconnects cleanly without crashing.
+    WebSocket endpoint streaming live FL metrics.
+
+    Behaviour:
+    - Sends initial snapshot immediately on connect.
+    - Every second, checks backend/audit_log.db for new rows written by the
+      real FL server. If found, merges them into training_state and broadcasts.
+    - Falls back to the simulation loop broadcast when no real data is present.
     """
     await manager.connect(websocket)
+    last_audit_id: int = 0
     try:
-        # Send initial snapshot immediately upon connection
         await websocket.send_json(training_state)
         while True:
-            # Keep connection open; receive client pings/messages if any
-            await websocket.receive_text()
+            await asyncio.sleep(1.0)
+
+            # --- Poll real audit DB ---
+            new_rows = _fetch_audit_rounds(since_id=last_audit_id)
+            for row in new_rows:
+                last_audit_id = row["id"]
+                rnd = row["round_number"]
+                training_state["current_round"] = rnd
+
+                eps = row.get("max_epsilon_spent") or 0.0
+                training_state["privacy_budget"]["current_epsilon"] = round(eps, 4)
+
+                acc = row.get("global_accuracy")
+                round_entry = {
+                    "round":                  rnd,
+                    "global_accuracy":        acc,
+                    "global_loss":            None,
+                    "epsilon_spent":          eps,
+                    "participating_banks":    ["Bank_A", "Bank_B", "Bank_C"],
+                    "cosine_similarity_passed": row.get("poisoned_nodes", 0) == 0,
+                    "poisoned_nodes_dropped": row.get("poisoned_nodes", 0),
+                    "timestamp":              row.get("timestamp"),
+                }
+                training_state["rounds"].append(round_entry)
+
+                if rnd >= training_state["total_rounds"]:
+                    training_state["is_training"] = False
+
+                await websocket.send_json(training_state)
+
     except WebSocketDisconnect:
         manager.disconnect(websocket)
     except Exception:
@@ -253,6 +315,55 @@ async def webhook_metrics(payload: WebhookPayload):
     await manager.broadcast(training_state)
 
     return {"status": "success", "message": f"Metrics for round {payload.round} processed"}
+
+# ---------------------------------------------------------------------------
+# X-Factor: Thin-File Credit Scoring Demo
+# ---------------------------------------------------------------------------
+
+class ThinFileProfile(BaseModel):
+    customer_id:         Optional[str]  = "CUST-DEMO-001"
+    age:                 Optional[int]  = 28
+    monthly_income:      Optional[float] = 0.0
+    credit_history_months: Optional[int] = 0
+    num_micro_transactions: Optional[int] = 47
+    network_trust_score: Optional[float] = 0.74
+
+
+@app.post("/api/evaluate-thin-file", summary="Thin-File Credit Risk Evaluation (Demo)")
+async def evaluate_thin_file(profile: ThinFileProfile):
+    """
+    X-Factor demo endpoint: shows how FedGuard's federated global model can
+    approve a 'thin-file' customer that a local bank-only model would reject.
+
+    The local model has seen only ~1% of global fraud patterns (bank_c scenario).
+    The global federated model has learned cross-bank behavioural signals.
+    """
+    # Deterministic mock — replace with real model inference in production
+    local_confidence  = round(0.30 + (profile.num_micro_transactions or 0) * 0.003, 2)
+    local_confidence  = min(local_confidence, 0.64)   # local model caps here
+    global_confidence = round(0.72 + (profile.network_trust_score or 0) * 0.22, 2)
+    global_confidence = min(global_confidence, 0.97)
+
+    local_status  = "Approved" if local_confidence >= 0.60 else "Rejected"
+    global_status = "Approved" if global_confidence >= 0.70 else "Rejected"
+
+    shap_insights = [
+        "High micro-transaction consistency across 3-month window",
+        "Cross-referenced network trust score above 0.70 threshold",
+        "Federated model detected non-zero payment velocity pattern",
+    ]
+    if profile.credit_history_months == 0:
+        shap_insights.append("Zero formal credit history — thin-file flag suppressed by FL model")
+
+    return {
+        "customer_id":    profile.customer_id,
+        "local_model":    {"status": local_status,  "confidence": local_confidence},
+        "global_model":   {"status": global_status, "confidence": global_confidence},
+        "delta_uplift":   round(global_confidence - local_confidence, 2),
+        "shap_insights":  shap_insights,
+        "note": "Global model trained via FedGuard — no raw data shared between banks.",
+    }
+
 
 @app.get("/api/compliance", summary="Get Compliance Mapping")
 async def get_compliance_mapping():
