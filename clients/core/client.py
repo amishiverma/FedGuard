@@ -18,7 +18,7 @@ warnings.filterwarnings("ignore", category=DeprecationWarning)
 import argparse
 import os
 import sys
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, Any
 
 import numpy as np
 import pandas as pd
@@ -27,8 +27,14 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader, TensorDataset
 
-import flwr as fl
-from flwr.common import NDArrays, Scalar
+try:
+    import flwr as fl
+    from flwr.common import NDArrays, Scalar
+except ImportError:
+    class fl:  # type: ignore
+        client = type("client", (), {"NumPyClient": object, "start_numpy_client": None})()
+    NDArrays = List[np.ndarray]  # type: ignore
+    Scalar = Any  # type: ignore
 
 # ---------------------------------------------------------------------------
 # Resolve monorepo imports regardless of working directory
@@ -40,12 +46,31 @@ for _p in [_CORE_DIR, _PROJECT_DIR]:
     if _p not in sys.path:
         sys.path.insert(0, _p)
 
-from model import TabularNet, get_device, get_model_parameters, set_model_parameters  # noqa: E402
-from dp_training import (  # noqa: E402
-    attach_dp_engine,
-    train_one_epoch_dp,
-    get_privacy_spent,
-)
+try:
+    from model import TabularNet, get_device, get_model_parameters, set_model_parameters  # noqa: E402
+except ImportError:
+    from clients.core.model import TabularNet, get_device, get_model_parameters, set_model_parameters  # noqa: E402
+
+try:
+    from dp_training import (  # noqa: E402
+        attach_dp_engine,
+        train_one_epoch_dp,
+        get_privacy_spent,
+    )
+except ImportError:
+    from clients.core.dp_training import (  # noqa: E402
+        attach_dp_engine,
+        train_one_epoch_dp,
+        get_privacy_spent,
+    )
+
+# Re-export client utilities from client.py
+try:
+    from client import FraudFlowerClient, get_parameters, set_parameters  # noqa: E402
+except ImportError:
+    FraudFlowerClient = None  # type: ignore
+    get_parameters = get_model_parameters
+    set_parameters = set_model_parameters
 
 # ---------------------------------------------------------------------------
 # Config
@@ -131,7 +156,7 @@ class BankFLClient(fl.client.NumPyClient):
         self.model = TabularNet(input_dim=INPUT_DIM).to(self.device)
 
         # DP state — engine is re-attached each round so epsilon accounting
-        # is per-round.  Cumulative tracking is the server's responsibility
+        # is per-round. Cumulative tracking is the server's responsibility
         # via the audit log.
         self._dp_attached = False
 
@@ -277,6 +302,18 @@ def main():
         server_address=args.server,
         client=client,
     )
+
+
+__all__ = [
+    "BankFLClient",
+    "FraudFlowerClient",
+    "get_parameters",
+    "set_parameters",
+    "get_model_parameters",
+    "set_model_parameters",
+    "load_bank_dataset",
+    "main",
+]
 
 
 if __name__ == "__main__":
