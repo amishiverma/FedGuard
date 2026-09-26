@@ -1,9 +1,11 @@
+--extra-index-url https://download.pytorch.org/whl/cu121
+
 # Federated Learning
 flwr==1.7.0
 
 # Machine Learning & Privacy
-torch==2.2.0
-torchvision==0.17.0
+torch==2.2.0+cu121
+torchvision==0.17.0+cu121
 opacus==1.4.0
 scikit-learn==1.4.0
 pandas==2.2.0
@@ -16,6 +18,7 @@ fastapi==0.109.2
 uvicorn==0.27.0
 websockets==12.0
 python-multipart==0.0.9
+httpx
 
 # Utilities
 python-dotenv==1.0.1

@@ -6,28 +6,85 @@ Flower FL Server with SecureAggStrategy.
 SecureAggStrategy extends FedAvg with:
   1. Cosine Similarity Byzantine detection — drops clients whose weight
      vector is statistically anomalous before aggregation.
-  2. Audit logging — prints per-round epsilon and dropped client IDs.
+  2. SQLite Audit Log — appends every round's metrics to backend/audit_log.db.
 
 Run:
     python backend/fl_server/server.py
 """
 
+import os
+import sqlite3
 import warnings
-from typing import Optional, Union
 from logging import WARNING
+from typing import Optional, Union
 
 import numpy as np
 import flwr as fl
 from flwr.common import (
+    EvaluateRes,
     FitRes,
     Parameters,
     Scalar,
-    ndarrays_to_parameters,
     parameters_to_ndarrays,
 )
 from flwr.server.client_proxy import ClientProxy
 from flwr.server.strategy import FedAvg
 from flwr.common.logger import log
+
+# ---------------------------------------------------------------------------
+# Paths
+# ---------------------------------------------------------------------------
+_SERVER_DIR  = os.path.dirname(os.path.abspath(__file__))          # backend/fl_server/
+_BACKEND_DIR = os.path.abspath(os.path.join(_SERVER_DIR, ".."))    # backend/
+AUDIT_DB     = os.path.join(_BACKEND_DIR, "audit_log.db")
+
+
+# ---------------------------------------------------------------------------
+# Audit Log (SQLite — append-only)
+# ---------------------------------------------------------------------------
+
+def _init_audit_db(db_path: str) -> None:
+    """Create the audit_rounds table if it doesn't exist."""
+    con = sqlite3.connect(db_path)
+    con.execute("""
+        CREATE TABLE IF NOT EXISTS audit_rounds (
+            id                  INTEGER PRIMARY KEY AUTOINCREMENT,
+            round_number        INTEGER NOT NULL,
+            global_accuracy     REAL,
+            max_epsilon_spent   REAL,
+            poisoned_nodes      INTEGER DEFAULT 0,
+            clients_accepted    INTEGER DEFAULT 0,
+            timestamp           DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+    con.commit()
+    con.close()
+
+
+def _write_audit_round(
+    db_path: str,
+    round_number: int,
+    global_accuracy: Optional[float],
+    max_epsilon_spent: float,
+    poisoned_nodes: int,
+    clients_accepted: int,
+) -> None:
+    """Append one round record to the audit log (non-blocking, best-effort)."""
+    try:
+        con = sqlite3.connect(db_path)
+        con.execute(
+            """
+            INSERT INTO audit_rounds
+                (round_number, global_accuracy, max_epsilon_spent, poisoned_nodes, clients_accepted)
+            VALUES (?, ?, ?, ?, ?)
+            """,
+            (round_number, global_accuracy, max_epsilon_spent, poisoned_nodes, clients_accepted),
+        )
+        con.commit()
+        con.close()
+    except Exception as exc:
+        log(WARNING, "[AuditLog] Write failed for round %d: %s", round_number, exc)
+
 
 # ---------------------------------------------------------------------------
 # Cosine Similarity helpers
@@ -40,7 +97,6 @@ def _flatten_weights(parameters: Parameters) -> np.ndarray:
 
 
 def _cosine_similarity(a: np.ndarray, b: np.ndarray) -> float:
-    """Compute cosine similarity between two flat vectors."""
     norm_a = np.linalg.norm(a)
     norm_b = np.linalg.norm(b)
     if norm_a == 0 or norm_b == 0:
@@ -56,31 +112,28 @@ def detect_poisoned_clients(
     Cosine Similarity poisoning detection.
 
     Algorithm:
-      1. Flatten each client's parameters into a 1-D vector.
-      2. Build a (N × N) pairwise cosine similarity matrix.
-      3. For each client i, compute mean_sim[i] = avg of row i (excluding self).
-      4. Compute overall mean μ and std σ of mean_sim.
-      5. Drop client i if mean_sim[i] < μ - threshold_factor * σ.
+      1. Flatten each client's parameters → 1-D vector.
+      2. Build N×N pairwise cosine similarity matrix.
+      3. mean_sim[i] = mean of row i (diagonal excluded).
+      4. Drop client i if mean_sim[i] < μ - threshold_factor * σ.
 
     Returns:
         (clean_results, list_of_dropped_client_ids)
     """
     if len(results) < 2:
-        return results, []  # Cannot detect with <2 clients
+        return results, []
 
     vectors = [_flatten_weights(fit_res.parameters) for _, fit_res in results]
     n = len(vectors)
 
-    # Build pairwise similarity matrix
     sim_matrix = np.zeros((n, n))
     for i in range(n):
         for j in range(n):
             if i != j:
                 sim_matrix[i, j] = _cosine_similarity(vectors[i], vectors[j])
 
-    # Mean similarity per client (exclude self-similarity diagonal)
     np.fill_diagonal(sim_matrix, np.nan)
-    mean_sim = np.nanmean(sim_matrix, axis=1)   # shape: (n,)
+    mean_sim = np.nanmean(sim_matrix, axis=1)
 
     overall_mean = float(np.mean(mean_sim))
     overall_std  = float(np.std(mean_sim))
@@ -90,16 +143,14 @@ def detect_poisoned_clients(
     dropped_ids:   list[str] = []
 
     for i, (proxy, fit_res) in enumerate(results):
-        client_id = proxy.cid
         if mean_sim[i] < cutoff:
             log(
                 WARNING,
-                "[SecAgg] ⚠️  MALICIOUS NODE DETECTED — client_id=%s | "
-                "mean_cosine_sim=%.4f < cutoff=%.4f (μ=%.4f, σ=%.4f). "
-                "Dropping update.",
-                client_id, mean_sim[i], cutoff, overall_mean, overall_std,
+                "[SecAgg] MALICIOUS NODE DETECTED — client_id=%s | "
+                "mean_cosine_sim=%.4f < cutoff=%.4f (mu=%.4f, sigma=%.4f). Dropping.",
+                proxy.cid, mean_sim[i], cutoff, overall_mean, overall_std,
             )
-            dropped_ids.append(client_id)
+            dropped_ids.append(proxy.cid)
         else:
             clean_results.append((proxy, fit_res))
 
@@ -112,17 +163,20 @@ def detect_poisoned_clients(
 
 class SecureAggStrategy(FedAvg):
     """
-    FedAvg + Byzantine-robust Cosine Similarity poisoning filter.
+    FedAvg + Byzantine cosine-similarity filter + SQLite audit logging.
 
-    Any client update that is statistically anomalous (mean cosine similarity
-    to other clients falls below μ - 1.5σ) is silently dropped before
-    the FedAvg weighted average is computed.
+    - Waits for all 3 banks (min_available_clients=3, fraction_fit=1.0).
+    - Drops poisoned clients before aggregation.
+    - Writes every round to backend/audit_log.db.
     """
 
     def __init__(self, poisoning_threshold: float = 1.5, **kwargs):
         super().__init__(**kwargs)
         self.poisoning_threshold = poisoning_threshold
-        self._round_num = 0
+        # Track per-round evaluate metrics to cross-reference in audit log
+        self._last_accuracy: Optional[float] = None
+        _init_audit_db(AUDIT_DB)
+        log(WARNING, "[AuditLog] Initialised at %s", AUDIT_DB)
 
     def aggregate_fit(
         self,
@@ -130,12 +184,6 @@ class SecureAggStrategy(FedAvg):
         results: list[tuple[ClientProxy, FitRes]],
         failures: list[Union[tuple[ClientProxy, FitRes], BaseException]],
     ) -> tuple[Optional[Parameters], dict[str, Scalar]]:
-        """
-        1. Run cosine similarity poisoning filter on raw results.
-        2. Delegate clean results to FedAvg.aggregate_fit.
-        3. Log round summary (clients received, dropped, epsilon budget).
-        """
-        self._round_num = server_round
 
         if not results:
             return None, {}
@@ -145,46 +193,75 @@ class SecureAggStrategy(FedAvg):
             results, threshold_factor=self.poisoning_threshold
         )
 
-        # Collect privacy metrics reported by clients
+        # Collect epsilon values reported by clients
         epsilon_values: list[float] = []
         for _, fit_res in clean_results:
             eps = fit_res.metrics.get("epsilon")
             if eps is not None:
                 epsilon_values.append(float(eps))
 
-        max_epsilon = max(epsilon_values) if epsilon_values else float("nan")
+        max_epsilon = max(epsilon_values) if epsilon_values else 0.0
 
-        # Summary log
         log(
             WARNING,
-            "[Round %d] Clients received=%d | Dropped (poisoned)=%d | "
-            "Max ε spent=%.4f | Accepted=%d",
-            server_round,
-            len(results),
-            len(dropped_ids),
-            max_epsilon,
-            len(clean_results),
+            "[Round %d] received=%d | poisoned_dropped=%d | accepted=%d | max_epsilon=%.4f",
+            server_round, len(results), len(dropped_ids), len(clean_results), max_epsilon,
         )
 
-        if len(clean_results) == 0:
+        if not clean_results:
             warnings.warn(
-                f"[Round {server_round}] All clients dropped by poisoning filter! "
-                "Skipping aggregation.",
-                RuntimeWarning,
-                stacklevel=2,
+                f"[Round {server_round}] All clients dropped — skipping aggregation.",
+                RuntimeWarning, stacklevel=2,
+            )
+            _write_audit_round(
+                AUDIT_DB, server_round, None, max_epsilon,
+                poisoned_nodes=len(dropped_ids), clients_accepted=0,
             )
             return None, {"dropped_all": True}
 
-        # Aggregate with FedAvg on the clean subset
+        # --- FedAvg aggregation on clean subset ---
         aggregated_params, aggregated_metrics = super().aggregate_fit(
             server_round, clean_results, failures
         )
 
-        aggregated_metrics["round"]       = server_round
-        aggregated_metrics["dropped"]     = len(dropped_ids)
-        aggregated_metrics["max_epsilon"] = max_epsilon
+        # --- Audit log write ---
+        _write_audit_round(
+            AUDIT_DB,
+            round_number=server_round,
+            global_accuracy=self._last_accuracy,   # populated after evaluate
+            max_epsilon_spent=max_epsilon,
+            poisoned_nodes=len(dropped_ids),
+            clients_accepted=len(clean_results),
+        )
+
+        aggregated_metrics.update({
+            "round":       server_round,
+            "dropped":     len(dropped_ids),
+            "max_epsilon": max_epsilon,
+        })
 
         return aggregated_params, aggregated_metrics
+
+    def aggregate_evaluate(
+        self,
+        server_round: int,
+        results: list[tuple[ClientProxy, EvaluateRes]],
+        failures: list[Union[tuple[ClientProxy, EvaluateRes], BaseException]],
+    ) -> tuple[Optional[float], dict[str, Scalar]]:
+        """Capture aggregated accuracy so audit_fit can reference it."""
+        loss, metrics = super().aggregate_evaluate(server_round, results, failures)
+
+        # Weighted average accuracy from evaluate results
+        if results:
+            total_samples = sum(r.num_examples for _, r in results)
+            weighted_acc  = sum(
+                r.metrics.get("accuracy", 0.0) * r.num_examples
+                for _, r in results
+            ) / max(total_samples, 1)
+            self._last_accuracy = round(weighted_acc, 6)
+            log(WARNING, "[Round %d] Global accuracy=%.4f", server_round, self._last_accuracy)
+
+        return loss, metrics
 
 
 # ---------------------------------------------------------------------------
@@ -195,30 +272,20 @@ def start_server(
     host: str = "0.0.0.0",
     port: int = 8080,
     num_rounds: int = 10,
-    min_clients: int = 2,
-    min_available_clients: int = 3,
 ) -> None:
-    """
-    Start the Flower FL server with SecureAggStrategy.
-
-    Args:
-        host                  : Bind address. Default '0.0.0.0'.
-        port                  : Flower gRPC port. Default 8080.
-        num_rounds            : Number of FL training rounds.
-        min_clients           : Min clients needed to start a round.
-        min_available_clients : Min clients that must be registered.
-    """
     strategy = SecureAggStrategy(
         poisoning_threshold=1.5,
-        fraction_fit=1.0,           # sample all available clients each round
+        fraction_fit=1.0,               # use ALL available clients each round
         fraction_evaluate=1.0,
-        min_fit_clients=min_clients,
-        min_evaluate_clients=min_clients,
-        min_available_clients=min_available_clients,
+        min_fit_clients=3,              # require all 3 banks
+        min_evaluate_clients=3,
+        min_available_clients=3,        # block until all 3 banks connect
     )
 
     server_address = f"{host}:{port}"
-    print(f"[FedGuard] Starting FL server on {server_address} for {num_rounds} rounds ...")
+    print(f"[FedGuard] FL server starting on {server_address} | rounds={num_rounds}")
+    print(f"[FedGuard] Audit log → {AUDIT_DB}")
+    print(f"[FedGuard] Waiting for 3 bank clients ...")
 
     fl.server.start_server(
         server_address=server_address,
