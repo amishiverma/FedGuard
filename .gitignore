@@ -40,7 +40,7 @@ yarn-error.log*
 # =========================
 # Data (CRITICAL FOR PRIVACY)
 # =========================
-data/
+data/raw
 *.csv
 *.json
 !config.json

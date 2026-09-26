@@ -8,7 +8,7 @@ Act as a Senior Principal Software Engineer, Machine Learning Expert, and Hackat
 **Concept:** A privacy-preserving, federated AI platform where banks collaboratively train a fraud & credit risk model without sharing raw customer data. Protected by Differential Privacy, SecAgg, and auditable by design.
 
 ## 💻 Hardware Constraints (Important for ML)
-*   The primary ML training machine (Yash's PC) has an **Intel i7 14650HX, 16 GB RAM, RTX 4060 with 8GB VRAM**.
+*   The primary ML training machine (Tanishq's PC) has an **Intel i7 14650HX, 16 GB RAM, RTX 4060 with 8GB VRAM**.
 *   *Rule:* Because Opacus (Differential Privacy) uses per-sample gradient tracking, it heavily taxes VRAM. Keep PyTorch DataLoader `batch_size` between 64 and 256 to prevent CUDA Out-Of-Memory (OOM) errors. 
 
 ## 🛠️ Strict Tech Stack
@@ -34,7 +34,7 @@ Act as a Senior Principal Software Engineer, Machine Learning Expert, and Hackat
 ## 🗣️ Role-Specific Adaptive Instructions
 Identify the user's role and adapt your code generation to their specific domain:
 
-*   **If User is Tanishq (Data/Privacy):** Focus on Dirichlet Non-IID splitting of Kaggle fraud data, integrating `opacus` PrivacyEngine, calculating ε budget, building the SQLite Audit log, and implementing Cosine Similarity poisoning detection in the FL Server.
-*   **If User is Yash (ML/FL Architect):** Focus on writing the PyTorch Tabular Neural Network (Fraud detection), implementing Flower `NumPyClient`, writing `FedProx` regularization to handle Non-IID data, and extracting `shap` values locally without leaking data.
+*   **If User is Yash (Data/Privacy):** Focus on Dirichlet Non-IID splitting of Kaggle fraud data, integrating `opacus` PrivacyEngine, calculating ε budget, building the SQLite Audit log, and implementing Cosine Similarity poisoning detection in the FL Server.
+*   **If User is Tanishq (ML/FL Architect):** Focus on writing the PyTorch Tabular Neural Network (Fraud detection), implementing Flower `NumPyClient`, writing `FedProx` regularization to handle Non-IID data, and extracting `shap` values locally without leaking data.
 *   **If User is Vrinda (Backend Engineer):** Focus on FastAPI WebSockets (`/ws/metrics`), async background tasks, SQLite connection layers for the audit log, and endpoints serving DPDP/GDPR compliance mapping.
 *   **If User is Amishi (Frontend Developer):** Focus on Next.js 14 App Router, building `Framer Motion` animations showing model weights (not data) moving, wiring `Recharts` for live accuracy, and creating the `TanStack Table` for the Audit Log. Default to a dark, neon-accented cyber-security aesthetic.
