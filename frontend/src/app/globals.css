@@ -1,0 +1,183 @@
+@import "tailwindcss";
+
+:root {
+  --bg-cream: #fcf6ee;
+  --text-dark: #1e293b;
+  --clay-lavender: #6366f1;
+  --clay-mint: #10b981;
+  --clay-yellow: #f59e0b;
+  --clay-pink: #f43f5e;
+}
+
+body {
+  background-color: #fcf6ee;
+  background-image: 
+    radial-gradient(at 10% 10%, rgba(224, 234, 254, 0.6) 0px, transparent 40%),
+    radial-gradient(at 90% 10%, rgba(254, 228, 230, 0.5) 0px, transparent 40%),
+    radial-gradient(at 50% 90%, rgba(209, 250, 229, 0.5) 0px, transparent 50%),
+    radial-gradient(at 80% 80%, rgba(254, 243, 199, 0.4) 0px, transparent 40%);
+  color: #1e293b;
+  font-family: var(--font-inter), system-ui, -apple-system, sans-serif;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* 3D Claymorphism / Soft Neomorphism Design System from image_2.png */
+
+/* Base Soft White / Cream Card */
+.clay-card-cream {
+  background: #ffffff;
+  color: #1e293b;
+  border-radius: 28px;
+  box-shadow: 
+    14px 18px 30px rgba(210, 190, 170, 0.4),
+    -10px -10px 24px rgba(255, 255, 255, 0.95),
+    inset 2px 2px 4px rgba(255, 255, 255, 0.9),
+    inset -2px -2px 6px rgba(190, 170, 150, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+}
+
+/* Bank A / Server / Primary Lavender Blue 3D Card */
+.clay-card-lavender {
+  background: linear-gradient(135deg, #e0eafe 0%, #c7d2fe 100%);
+  color: #1e1b4b;
+  border-radius: 28px;
+  box-shadow: 
+    12px 16px 28px rgba(160, 175, 225, 0.45),
+    -8px -8px 20px rgba(255, 255, 255, 0.9),
+    inset 2px 2px 4px rgba(255, 255, 255, 0.95),
+    inset -2px -2px 6px rgba(130, 145, 205, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.9);
+}
+
+/* Bank B / Mint Green 3D Card */
+.clay-card-mint {
+  background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+  color: #064e3b;
+  border-radius: 28px;
+  box-shadow: 
+    12px 16px 28px rgba(140, 200, 170, 0.45),
+    -8px -8px 20px rgba(255, 255, 255, 0.9),
+    inset 2px 2px 4px rgba(255, 255, 255, 0.95),
+    inset -2px -2px 6px rgba(110, 170, 140, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.9);
+}
+
+/* FinTech C / Warm Yellow 3D Card */
+.clay-card-yellow {
+  background: linear-gradient(135deg, #fef3c7 0%, #fde047 100%);
+  color: #78350f;
+  border-radius: 28px;
+  box-shadow: 
+    12px 16px 28px rgba(210, 190, 120, 0.45),
+    -8px -8px 20px rgba(255, 255, 255, 0.9),
+    inset 2px 2px 4px rgba(255, 255, 255, 0.95),
+    inset -2px -2px 6px rgba(180, 160, 80, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.9);
+}
+
+/* Federated Server / Users / Soft Pink 3D Card */
+.clay-card-pink {
+  background: linear-gradient(135deg, #ffe4e6 0%, #fecdd3 100%);
+  color: #881337;
+  border-radius: 28px;
+  box-shadow: 
+    12px 16px 28px rgba(220, 170, 180, 0.45),
+    -8px -8px 20px rgba(255, 255, 255, 0.9),
+    inset 2px 2px 4px rgba(255, 255, 255, 0.95),
+    inset -2px -2px 6px rgba(190, 130, 145, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.9);
+}
+
+/* Inset Soft Clay Container */
+.clay-inset-cream {
+  border-radius: 20px;
+  background: #f8fafc;
+  box-shadow: 
+    inset 4px 4px 8px rgba(190, 170, 150, 0.25),
+    inset -3px -3px 6px rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+}
+
+/* Pill Buttons with Soft 3D Pressable Effect */
+.clay-btn-lavender {
+  border-radius: 9999px;
+  background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+  color: #ffffff;
+  box-shadow: 
+    6px 10px 20px rgba(79, 70, 229, 0.35),
+    -4px -4px 12px rgba(255, 255, 255, 0.9),
+    inset 2px 2px 4px rgba(255, 255, 255, 0.4),
+    inset -2px -2px 4px rgba(30, 27, 75, 0.3);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.clay-btn-lavender:hover {
+  transform: translateY(-2px);
+  box-shadow: 
+    8px 14px 26px rgba(79, 70, 229, 0.45),
+    -5px -5px 15px rgba(255, 255, 255, 0.95),
+    inset 2px 2px 4px rgba(255, 255, 255, 0.6);
+}
+
+.clay-btn-lavender:active {
+  transform: translateY(1px);
+  box-shadow: 
+    3px 4px 10px rgba(79, 70, 229, 0.3),
+    inset 3px 3px 6px rgba(30, 27, 75, 0.5);
+}
+
+.clay-btn-mint {
+  border-radius: 9999px;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: #ffffff;
+  box-shadow: 
+    6px 10px 20px rgba(16, 185, 129, 0.35),
+    -4px -4px 12px rgba(255, 255, 255, 0.9),
+    inset 2px 2px 4px rgba(255, 255, 255, 0.4),
+    inset -2px -2px 4px rgba(6, 78, 59, 0.3);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.clay-btn-mint:hover {
+  transform: translateY(-2px);
+  box-shadow: 
+    8px 14px 26px rgba(16, 185, 129, 0.45),
+    inset 2px 2px 4px rgba(255, 255, 255, 0.6);
+}
+
+.clay-btn-pink {
+  border-radius: 9999px;
+  background: linear-gradient(135deg, #f43f5e 0%, #e11d48 100%);
+  color: #ffffff;
+  box-shadow: 
+    6px 10px 20px rgba(244, 63, 94, 0.35),
+    -4px -4px 12px rgba(255, 255, 255, 0.9),
+    inset 2px 2px 4px rgba(255, 255, 255, 0.4);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.clay-btn-cream {
+  border-radius: 9999px;
+  background: #ffffff;
+  color: #1e293b;
+  box-shadow: 
+    6px 10px 20px rgba(210, 190, 170, 0.35),
+    -4px -4px 12px rgba(255, 255, 255, 0.95),
+    inset 2px 2px 4px rgba(255, 255, 255, 0.9);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.clay-btn-cream:hover {
+  transform: translateY(-2px);
+  box-shadow: 
+    8px 14px 24px rgba(200, 180, 160, 0.45);
+}
+
+.glow-pill-blue {
+  filter: drop-shadow(0 0 10px rgba(99, 102, 241, 0.4));
+}
+
+.glow-pill-green {
+  filter: drop-shadow(0 0 10px rgba(16, 185, 129, 0.4));
+}
