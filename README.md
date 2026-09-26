@@ -1,9 +1,12 @@
 # FedGuard: Privacy-Preserving Financial Risk Control
 
-![FedGuard Flowchart](./flowchart.jpg)
+**Team Name:** Mind Over Matter  
+**Members:** Amishi Verma, Vrinda Panchal, Yash Mhatre, Tanishq Parab
 
-## ⚠️ Problem We Are Solving
+## ⚠️ Problem Statement
 Financial institutions operate in silos due to strict data privacy regulations (like India's DPDP Act). Banks cannot share raw customer data with each other, leading to weak fraud detection models and poor credit decisions for thin-file customers. 
+
+![FedGuard Flowchart](./flowchart.jpg) 
 
 ## 🔒 How We Are Solving the Problem
 We implemented a **Federated Learning Network**. Instead of centralizing data, we decentralize the AI. Multiple financial institutions train a shared global model on their local, secure data. Only mathematically encrypted model updates are shared with the central server, ensuring zero raw data leakage.
@@ -26,7 +29,7 @@ We implemented a **Federated Learning Network**. Instead of centralizing data, w
 - **Backend & Websockets:** FastAPI, Python, SQLite (Audit Logging)
 - **Frontend UI:** Next.js 14, Tailwind CSS, Recharts, Framer Motion
 
-## Quick Start (Development)
+## ⚙️ Setup Instructions
 
 ### 1. Server & Clients
 ```bash
