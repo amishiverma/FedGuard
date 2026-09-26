@@ -1,11 +1,118 @@
+import asyncio
+import copy
+from contextlib import asynccontextmanager
+from typing import List
+
 import uvicorn
-from fastapi import FastAPI
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
+
+# Global State Dictionary for FL Training Simulation & Real-time Metrics
+training_state = {
+    "is_training": True,
+    "current_round": 0,
+    "total_rounds": 10,
+    "rounds": [],
+    "bank_status": {
+        "Bank_A": {"status": "READY", "samples": 4500, "epsilon": 0.0},
+        "Bank_B": {"status": "READY", "samples": 3800, "epsilon": 0.0},
+        "Bank_C": {"status": "READY", "samples": 5200, "epsilon": 0.0},
+    },
+    "privacy_budget": {
+        "target_epsilon": 3.0,
+        "delta": 1e-5,
+        "current_epsilon": 0.0,
+    },
+}
+
+class ConnectionManager:
+    def __init__(self):
+        self.active_connections: List[WebSocket] = []
+
+    async def connect(self, websocket: WebSocket):
+        await websocket.accept()
+        self.active_connections.append(websocket)
+
+    def disconnect(self, websocket: WebSocket):
+        if websocket in self.active_connections:
+            self.active_connections.remove(websocket)
+
+    async def broadcast(self, message: dict):
+        for connection in list(self.active_connections):
+            try:
+                await connection.send_json(message)
+            except Exception:
+                self.disconnect(connection)
+
+manager = ConnectionManager()
+
+async def simulate_training():
+    """
+    Background worker that simulates federated learning rounds.
+    Increases accuracy and epsilon budget spent every 2 seconds if is_training is True.
+    """
+    await asyncio.sleep(1.0)
+    while True:
+        try:
+            if training_state["is_training"]:
+                current = training_state["current_round"]
+                if current < training_state["total_rounds"]:
+                    current += 1
+                    training_state["current_round"] = current
+
+                    # Simulating realistic metric convergence
+                    base_acc = 0.72
+                    acc_gain = (1 - 0.72) * (1 - (0.75 ** current))
+                    round_acc = round(base_acc + acc_gain, 4)
+                    round_loss = round(max(0.12, 0.65 * (0.80 ** current)), 4)
+                    
+                    # Privacy budget accumulation per round (Opacus ε accounting)
+                    eps_step = round(0.28 + (0.02 * (current % 3)), 3)
+                    new_eps = round(min(3.0, training_state["privacy_budget"]["current_epsilon"] + eps_step), 3)
+                    training_state["privacy_budget"]["current_epsilon"] = new_eps
+
+                    # Update bank participant states
+                    for bank in training_state["bank_status"]:
+                        training_state["bank_status"][bank]["status"] = "AGGREGATING" if current == training_state["total_rounds"] else "TRAINING"
+                        training_state["bank_status"][bank]["epsilon"] = new_eps
+
+                    # New round log entry
+                    round_data = {
+                        "round": current,
+                        "global_accuracy": round_acc,
+                        "global_loss": round_loss,
+                        "epsilon_spent": new_eps,
+                        "participating_banks": ["Bank_A", "Bank_B", "Bank_C"],
+                        "cosine_similarity_passed": True,
+                        "timestamp": round(asyncio.get_event_loop().time(), 2),
+                    }
+                    training_state["rounds"].append(round_data)
+
+                    # If completed all rounds, mark status
+                    if current >= training_state["total_rounds"]:
+                        training_state["is_training"] = False
+                        for bank in training_state["bank_status"]:
+                            training_state["bank_status"][bank]["status"] = "COMPLETED"
+
+                    # Broadcast latest snapshot to all active frontend subscribers
+                    await manager.broadcast(training_state)
+
+            await asyncio.sleep(2.0)
+        except Exception:
+            await asyncio.sleep(2.0)
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Start the simulation background loop
+    task = asyncio.create_task(simulate_training())
+    yield
+    task.cancel()
 
 app = FastAPI(
     title="FedGuard API",
     description="Privacy-Preserving Federated Learning Platform Compliance and Metrics Backend",
     version="1.0.0",
+    lifespan=lifespan,
 )
 
 # Enable CORS for frontend integration
@@ -24,6 +131,24 @@ async def health_check():
         "service": "FedGuard API",
         "version": "1.0.0"
     }
+
+@app.websocket("/ws/metrics")
+async def websocket_metrics(websocket: WebSocket):
+    """
+    WebSocket endpoint streaming live federated learning metrics & training state.
+    Handles client disconnects cleanly without crashing.
+    """
+    await manager.connect(websocket)
+    try:
+        # Send initial snapshot immediately upon connection
+        await websocket.send_json(training_state)
+        while True:
+            # Keep connection open; receive client pings/messages if any
+            await websocket.receive_text()
+    except WebSocketDisconnect:
+        manager.disconnect(websocket)
+    except Exception:
+        manager.disconnect(websocket)
 
 @app.get("/api/compliance", summary="Get Compliance Mapping")
 async def get_compliance_mapping():
