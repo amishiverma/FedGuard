@@ -1,59 +1,49 @@
-# 🛡️ Federated Learning for Cross-Institution Financial Risk Control
-**ENIGMA 5.0 - Fintech Track**
+# FedGuard: Privacy-Preserving Financial Risk Control
 
-## 📖 Problem Statement
-Financial institutions are siloed. Due to strict data privacy regulations (like India's DPDP Act), banks cannot share raw customer data with each other. This results in weak fraud detection models and poor credit decisions for thin-file customers. 
+![FedGuard Flowchart](./flowchart.jpg)
 
-## 🚀 Our Solution
-We implement a **Privacy-Preserving Federated Learning Network**. 
-Instead of centralizing data, we decentralize the AI. Multiple financial institutions train a shared global model on their local, secure data. Only mathematically encrypted model updates (gradients) are shared with the central server, ensuring zero raw data leakage.
+## ⚠️ Problem We Are Solving
+Financial institutions operate in silos due to strict data privacy regulations (like India's DPDP Act). Banks cannot share raw customer data with each other, leading to weak fraud detection models and poor credit decisions for thin-file customers. 
 
-### ✨ Key Features
-*   **Decentralized Training:** Uses `flwr` (Flower) to train across distributed nodes (simulating Bank A, B, and C).
-*   **Differential Privacy:** Integrated with `Opacus` to add cryptographic noise to model weights, preventing reverse-engineering of customer data.
-*   **Live Dashboard:** A real-time Next.js monitoring dashboard receiving training metrics via FastAPI WebSockets.
+## 🔒 How We Are Solving the Problem
+We implemented a **Federated Learning Network**. Instead of centralizing data, we decentralize the AI. Multiple financial institutions train a shared global model on their local, secure data. Only mathematically encrypted model updates are shared with the central server, ensuring zero raw data leakage.
 
-## 🏗️ Tech Stack
-*   **Federated Learning:** Flower (`flwr`)
-*   **Machine Learning:** PyTorch
-*   **Privacy Engine:** Opacus (Differential Privacy)
-*   **Backend & Websockets:** FastAPI, Python
-*   **Frontend UI:** Next.js, Tailwind CSS, Recharts
+## 📈 How It Helps
+- **Better Fraud Detection:** A robust global model trained on diverse cross-institutional data.
+- **Fairer Credit Decisions:** Improved credit scoring for users without compromising their private data.
+- **Regulatory Compliant:** Completely adheres to DPDP/GDPR since no raw data ever leaves the bank.
 
-## 📁 Repository Structure
-```text
-.
-├── backend/            # FastAPI central server & Flower global model aggregator
-├── clients/            # Local training scripts for Bank A, B, and C
-├── frontend/           # Next.js real-time monitoring dashboard
-├── data/               # Local datasets (IGNORED IN GIT FOR PRIVACY)
-├── notebooks/          # Jupyter notebooks for initial EDA and model testing
-├── requirements.txt    # Python dependencies
-└── README.md           
-```
+## 🔄 The Flow in Short
+1. **Local Training:** Each bank (Bank A, B, FinTech C) trains the model on its own private transaction data.
+2. **Protected Update:** Banks send only the encrypted model weights (gradients) to the central server.
+3. **Secure Aggregation:** The federated server combines all the protected updates to improve the Global Model.
+4. **Send Updated Model:** The improved Global Model is distributed back to all participating institutions for the next round.
 
-## 🛠️ Quick Start (Development)
+## 💻 Tech Stack
+- **Federated Learning:** Flower (`flwr`)
+- **Machine Learning:** PyTorch, Scikit-Learn
+- **Privacy Engine:** Opacus (Differential Privacy)
+- **Backend & Websockets:** FastAPI, Python, SQLite (Audit Logging)
+- **Frontend UI:** Next.js 14, Tailwind CSS, Recharts, Framer Motion
 
-### 1. Setup Python Environment (Backend & Clients)
+## Quick Start (Development)
+
+### 1. Server & Clients
 ```bash
+# Setup Python Environment
 python -m venv venv
-source venv/bin/activate  # On Windows use `venv\Scripts\activate`
+source venv/bin/activate  # Windows: venv\Scripts\activate
 pip install -r requirements.txt
-```
 
-### 2. Run the Central Aggregator Server
-```bash
-cd backend
-uvicorn main:app --reload
-```
+# Start Central Server
+cd backend && uvicorn main:app --reload
 
-### 3. Run the Bank Clients (in separate terminals)
-```bash
+# Start Bank Clients (in separate terminals)
 python clients/bank_a/client.py
 python clients/bank_b/client.py
 ```
 
-### 4. Run the Frontend Dashboard
+### 2. Frontend Dashboard
 ```bash
 cd frontend
 npm install

@@ -103,7 +103,7 @@ export default function FedGuardInteractiveFourScenePrototype() {
       <header className="w-full max-w-7xl px-4 sm:px-6 py-2 sticky top-0 z-50">
         <div className="clay-card-cream w-full flex items-center justify-between px-5 py-1 shadow-xl rounded-full">
           <div
-            onClick={() => setActiveScene(1)}
+            onClick={() => window.location.href = "/"}
             className="flex items-center gap-3 cursor-pointer hover:scale-105 transition-transform"
           >
             <img 
@@ -393,60 +393,89 @@ export default function FedGuardInteractiveFourScenePrototype() {
               {/* 3 Metric Clay Cards */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {/* Metric 1: Accuracy Counter */}
-                <div className="clay-card-lavender p-4 space-y-2 shadow-xl">
-                  <div className="text-[10px] font-mono font-bold text-indigo-900 uppercase">Global Model Accuracy</div>
-                  <div className="text-3xl font-extrabold text-indigo-950 font-mono">
-                    {(counterVal * 100).toFixed(0)}%
+                <div className="clay-card-lavender p-5 space-y-1.5 relative overflow-hidden flex justify-between items-center group">
+                  <div className="space-y-1 z-10">
+                    <div className="text-[9px] font-extrabold text-indigo-900/80 uppercase tracking-widest">Global Model Accuracy</div>
+                    <div className="text-3xl font-extrabold text-[#3730a3] font-sans tracking-tighter">
+                      {(counterVal * 100).toFixed(0)}%
+                    </div>
+                    <div className="text-[9px] text-indigo-800 font-bold flex items-center gap-1 pt-1">
+                      <TrendingUp className="w-3 h-3 text-indigo-600" /> AUC Score improved from 0.78 to 0.92
+                    </div>
                   </div>
-                  <div className="text-[10px] text-indigo-900 font-bold flex items-center gap-1">
-                    <TrendingUp className="w-3.5 h-3.5 text-indigo-700" /> AUC Score improved from 0.78 to 0.92
+                  <div className="z-10 bg-white/40 shadow-inner p-3 rounded-2xl border border-white/60 backdrop-blur-sm group-hover:scale-105 transition-transform duration-300">
+                    <BarChart3 className="w-6 h-6 text-[#3730a3]" />
                   </div>
                 </div>
 
                 {/* Metric 2: Privacy Budget Gauge */}
-                <div className="clay-card-pink p-4 space-y-2 shadow-xl">
-                  <div className="text-[10px] font-mono font-bold text-rose-900 uppercase">Privacy Budget Consumed (ε)</div>
-                  <div className="text-3xl font-extrabold text-rose-950 font-mono">
-                    ε = {gaugeVal.toFixed(2)}
+                <div className="clay-card-peach p-5 space-y-1.5 relative overflow-hidden flex justify-between items-center group">
+                  <div className="space-y-1 z-10">
+                    <div className="text-[9px] font-extrabold text-[#9a3412]/80 uppercase tracking-widest">Privacy Budget Consumed (ε)</div>
+                    <div className="text-3xl font-extrabold text-[#d97706] font-sans tracking-tighter">
+                      ε = {gaugeVal.toFixed(2)}
+                    </div>
+                    <div className="text-[9px] text-[#b45309] font-bold flex items-center gap-1 pt-1">
+                      <ShieldCheck className="w-3 h-3 text-[#d97706]" /> Target ε = 1.0 (Strong Privacy Guarantee)
+                    </div>
                   </div>
-                  <div className="text-[10px] text-rose-900 font-bold flex items-center gap-1">
-                    <ShieldCheck className="w-3.5 h-3.5 text-rose-700" /> Target ε = 1.0 (Strong Privacy Guarantee)
+                  <div className="z-10 bg-white/50 shadow-inner p-3 rounded-2xl border border-white/60 backdrop-blur-sm group-hover:scale-105 transition-transform duration-300">
+                    <Lock className="w-6 h-6 text-[#d97706]" />
                   </div>
                 </div>
 
                 {/* Metric 3: Bank Node Status */}
-                <div className="clay-card-mint p-4 space-y-2 shadow-xl">
-                  <div className="text-[10px] font-mono font-bold text-emerald-900 uppercase">Bank Node Status</div>
-                  <div className="text-base font-extrabold text-emerald-950 flex items-center gap-2">
-                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-600 animate-pulse" />
-                    <span>{bankStatus}</span>
+                <div className="clay-card-mint p-5 space-y-1.5 relative overflow-hidden flex justify-between items-center group">
+                  <div className="space-y-1 z-10">
+                    <div className="text-[9px] font-extrabold text-emerald-900/80 uppercase tracking-widest">Bank Node Status</div>
+                    <div className="text-lg font-extrabold text-[#065f46] flex items-center gap-2">
+                      <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)] animate-pulse" />
+                      <span className="tracking-tighter">{bankStatus}</span>
+                    </div>
+                    <div className="text-[9px] text-emerald-800 font-bold pt-1">
+                      3/3 Financial Institutions Synchronized
+                    </div>
                   </div>
-                  <div className="text-[10px] text-emerald-900 font-medium">
-                    3/3 Financial Institutions Synchronized
+                  <div className="z-10 bg-white/40 shadow-inner p-3 rounded-2xl border border-white/60 backdrop-blur-sm group-hover:scale-105 transition-transform duration-300">
+                    <Building2 className="w-6 h-6 text-[#065f46]" />
                   </div>
                 </div>
               </div>
 
-              {/* Live Loss Curve Chart (3D Card matching image_2.png style) */}
-              <div className="clay-card-cream p-5 space-y-3 shadow-2xl">
-                <div className="flex items-center justify-between">
-                  <div className="font-extrabold text-sm text-slate-900 flex items-center gap-2">
-                    <BarChart3 className="w-4 h-4 text-indigo-600" />
+              {/* Live Loss Curve Chart */}
+              <div className="bg-white/80 backdrop-blur-xl p-5 shadow-xl rounded-[1.5rem] border border-white/60">
+                <div className="flex items-center justify-between pb-3 border-b border-slate-200/50">
+                  <div className="font-extrabold text-sm text-[#1e1b4b] flex items-center gap-2">
+                    <BarChart3 className="w-4 h-4 text-[#4f46e5]" />
                     <span>Improved Global Model — Loss & Accuracy Progress</span>
                   </div>
-                  <span className="text-[10px] font-mono font-bold text-indigo-700 bg-indigo-100 px-2.5 py-0.5 rounded-full">
-                    Round 1 Active
+                  <span className="text-[9px] font-mono font-bold text-[#4338ca] bg-[#e0e7ff] px-2.5 py-1 rounded-full shadow-inner flex items-center">
+                    <span className="w-1.5 h-1.5 bg-[#6366f1] rounded-full inline-block mr-1.5"></span> Round 1 Active
                   </span>
                 </div>
 
-                <div className="h-32 w-full bg-slate-50/80 rounded-2xl p-3 flex items-end justify-between gap-2 border border-slate-200">
-                  {[0.4, 0.55, 0.65, 0.75, 0.82, 0.88, 0.92].map((height, idx) => (
-                    <div key={idx} className="flex-1 flex flex-col items-center gap-1.5 h-full justify-end">
-                      <div
-                        className="w-full clay-card-lavender transition-all duration-700 rounded-t-xl"
-                        style={{ height: `${height * chartProgress * 100}%` }}
+                <div className="h-32 w-full mt-5 rounded-2xl flex items-end justify-between gap-2.5 relative px-1">
+                  {[
+                    { h: 0.2, c: 'from-[#e0e7ff] to-[#c7d2fe]', border: 'border-[#818cf8]' },
+                    { h: 0.35, c: 'from-[#93c5fd] to-[#60a5fa]', border: 'border-[#3b82f6]' },
+                    { h: 0.45, c: 'from-[#60a5fa] to-[#3b82f6]', border: 'border-[#2563eb]' },
+                    { h: 0.55, c: 'from-[#d8b4fe] to-[#c084fc]', border: 'border-[#a855f7]' },
+                    { h: 0.65, c: 'from-[#f0abfc] to-[#e879f9]', border: 'border-[#d946ef]' },
+                    { h: 0.75, c: 'from-[#f9a8d4] to-[#f472b6]', border: 'border-[#ec4899]' },
+                    { h: 0.9, c: 'from-[#fdba74] to-[#fb923c]', border: 'border-[#f97316]' },
+                  ].map((bar, idx) => (
+                    <div key={idx} className="flex-1 flex flex-col items-center gap-1.5 h-full justify-end relative group z-10">
+                      {/* Floating dot */}
+                      <div 
+                        className={`absolute w-1.5 h-1.5 rounded-full border bg-white shadow-sm transition-all duration-700 ${bar.border}`}
+                        style={{ bottom: `calc(${bar.h * chartProgress * 100}% + 20px)` }}
                       />
-                      <span className="text-[9px] font-mono text-slate-500 font-bold">R{idx + 1}</span>
+                      {/* Bar */}
+                      <div
+                        className={`w-full bg-gradient-to-b ${bar.c} transition-all duration-700 rounded-xl shadow-[inset_0_2px_4px_rgba(255,255,255,0.6),0_4px_6px_rgba(0,0,0,0.05)]`}
+                        style={{ height: `${bar.h * chartProgress * 100}%` }}
+                      />
+                      <span className="text-[9px] font-mono text-slate-400 font-bold uppercase">R{idx + 1}</span>
                     </div>
                   ))}
                 </div>
