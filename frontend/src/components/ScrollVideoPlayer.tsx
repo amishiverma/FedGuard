@@ -10,7 +10,7 @@ interface ScrollVideoPlayerProps {
 
 export default function ScrollVideoPlayer({
   src,
-  speed = 0.5,
+  speed = 0.75,
   className = "w-full h-auto rounded-2xl object-cover shadow-inner",
 }: ScrollVideoPlayerProps) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -19,42 +19,51 @@ export default function ScrollVideoPlayer({
     const video = videoRef.current;
     if (!video) return;
 
-    // Set playback rate (e.g., 0.5x half speed)
-    video.playbackRate = speed;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            video.playbackRate = speed;
-            video.play().catch(() => {
-              // Silently handle any browser autoplay restrictions
-            });
-          } else {
-            video.pause();
-          }
+    const playVideo = () => {
+      video.playbackRate = speed;
+      const promise = video.play();
+      if (promise !== undefined) {
+        promise.catch((error) => {
+          console.warn("Autoplay error, awaiting interaction:", error);
         });
-      },
-      {
-        threshold: 0.25, // Play when 25% of the video is visible on screen
       }
-    );
+    };
 
-    observer.observe(video);
+    video.playbackRate = speed;
+    playVideo();
+
+    video.addEventListener("loadeddata", playVideo);
+    video.addEventListener("canplaythrough", playVideo);
 
     return () => {
-      observer.disconnect();
+      video.removeEventListener("loadeddata", playVideo);
+      video.removeEventListener("canplaythrough", playVideo);
     };
   }, [speed]);
 
   return (
-    <video
-      ref={videoRef}
-      src={src}
-      loop
-      muted
-      playsInline
-      className={className}
-    />
+    <div 
+      className="relative w-full cursor-pointer"
+      onClick={() => {
+        if (videoRef.current) {
+          if (videoRef.current.paused) {
+            videoRef.current.play();
+          } else {
+            videoRef.current.pause();
+          }
+        }
+      }}
+    >
+      <video
+        ref={videoRef}
+        src={src}
+        autoPlay
+        loop
+        muted
+        playsInline
+        preload="auto"
+        className={className}
+      />
+    </div>
   );
 }
