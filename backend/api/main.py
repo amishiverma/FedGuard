@@ -1,15 +1,16 @@
 import asyncio
-import copy
 import logging
 from contextlib import asynccontextmanager
 from typing import List
 
 import httpx
 import uvicorn
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect, status
+from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
+from audit_log import get_all_logs
+from shap_service import get_mock_shap_values
 
 logger = logging.getLogger("fedguard-api")
 logging.basicConfig(level=logging.INFO)
@@ -99,7 +100,7 @@ async def simulate_training():
                         "epsilon_spent": new_eps,
                         "participating_banks": ["Bank_A", "Bank_B", "Bank_C"],
                         "cosine_similarity_passed": True,
-                        "timestamp": round(asyncio.get_event_loop().time(), 2),
+                        "timestamp": round(asyncio.get_running_loop().time(), 2),
                     }
                     training_state["rounds"].append(round_data)
 
@@ -146,6 +147,37 @@ async def health_check():
         "service": "FedGuard API",
         "version": "1.0.0"
     }
+
+@app.get("/api/audit-log", summary="Get Immutable Audit Trail")
+async def get_audit_log():
+    """
+    Returns the append-only audit trail of all committed Federated Learning rounds.
+    Each entry contains round number, timestamp, gradient hash, epsilon spent, and status.
+    """
+    return get_all_logs()
+
+VALID_BANK_IDS = ["bank_a", "bank_b", "bank_c"]
+
+@app.get("/api/model/shap-values/{bank_id}", summary="Get Model Explainability (SHAP)")
+async def get_shap_values(bank_id: str):
+    """
+    Returns SHAP feature importance values for the local fraud detection model
+    at the specified bank. Simulates per-bank personalized model explanations
+    without leaking any raw data (GDPR Art. 22 / DPDP Sec. 12 compliance).
+    """
+    if bank_id not in VALID_BANK_IDS:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Bank '{bank_id}' not found. Valid options: {VALID_BANK_IDS}"
+        )
+    try:
+        return get_mock_shap_values(bank_id)
+    except Exception as e:
+        logger.error(f"SHAP value generation failed for bank '{bank_id}': {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to retrieve SHAP values for bank '{bank_id}': {str(e)}"
+        )
 
 @app.websocket("/ws/metrics")
 async def websocket_metrics(websocket: WebSocket):
@@ -213,7 +245,7 @@ async def webhook_metrics(payload: WebhookPayload):
         "epsilon_spent": payload.epsilon,
         "participating_banks": list(payload.bank_statuses.keys()) if payload.bank_statuses else ["Bank_A", "Bank_B", "Bank_C"],
         "cosine_similarity_passed": True,
-        "timestamp": round(asyncio.get_event_loop().time(), 2),
+        "timestamp": round(asyncio.get_running_loop().time(), 2),
     }
     training_state["rounds"].append(round_entry)
 
