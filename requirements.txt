@@ -4,8 +4,8 @@
 flwr==1.7.0
 
 # Machine Learning & Privacy
-torch==2.2.0+cu121
-torchvision==0.17.0+cu121
+torch==2.2.0
+torchvision==0.17.0
 opacus==1.4.0
 scikit-learn==1.4.0
 pandas==2.2.0
