@@ -11,8 +11,8 @@ from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect, stat
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
-from audit_log import get_all_logs
-from shap_service import get_mock_shap_values
+from backend.api.audit_log import get_all_logs
+from backend.api.shap_service import get_mock_shap_values
 
 # ---------------------------------------------------------------------------
 # Audit DB path (written by backend/fl_server/server.py)
